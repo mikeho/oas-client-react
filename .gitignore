@@ -1,3 +1,10 @@
+# editors
+*.swp
+.idea/
+.vs/
+.vscode/
+.DS_Store
+
 # Logs
 logs
 *.log

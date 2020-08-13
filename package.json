@@ -1,0 +1,25 @@
+{
+  "name": "@quasidea/oas-client-react",
+  "version": "1.0.1",
+  "description": "Code generation-based Open API Specification (a.k.a. Swagger) client for React",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mikeho/oas-client-react.git"
+  },
+  "author": "Mike Ho",
+  "license": "MIT",
+  "bin": {
+    "oas-client": "./cli.js"
+  },
+  "bugs": {
+    "url": "https://github.com/mikeho/oas-client-react/issues"
+  },
+  "homepage": "https://github.com/mikeho/oas-client-react#readme",
+  "dependencies": {
+    "@apidevtools/swagger-parser": "^10.0.1"
+  }
+}
