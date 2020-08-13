@@ -14,17 +14,20 @@ if (process.argv.length < 3) {
 
 var module = require("./index");
 
+var path = require('path');
+const rootPath = path.resolve(__dirname);
+
 switch (process.argv[2]) {
 	case 'init':
 		if (process.argv.length !== 4) {
 			showHelp();
 			return;
 		}
-		module.init(process.argv[3]);
+		module.init(process.argv[3], rootPath);
 		break;
 
 	case 'codegen':
-		module.codegen();
+		module.codegen(rootPath);
 		break;
 
 	default:
