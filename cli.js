@@ -1,4 +1,5 @@
-#!/usr/bin/env node
+#!/usr/bin/env node --trace-events-enabled
+
 
 function showHelp() {
 	console.log("options:\n" +
