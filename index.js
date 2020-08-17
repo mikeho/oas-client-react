@@ -133,6 +133,27 @@ var generateModelDefinitionList = function(propertyArray) {
 	return modelDefinitionList;
 }
 
+var executeCreateModelEnum = function(name, propertyName, propertyDefinition) {
+	const enumName = name + propertyName.toUpperCase().substring(0, 1) + propertyName.substring(1) + 'Enum';
+
+	var enumValues = '';
+
+	for (index = 0; index < propertyDefinition.enum.length; index++) {
+		const camelCase = propertyDefinition.enum[index];
+		const underscoreCase = camelCase.split(/(?=[A-Z])/).join('_').toUpperCase();
+		enumValues += '\t' + underscoreCase + ": '" + camelCase + "',\n";
+	}
+
+	const content =
+		'const ' + enumName + ' = Object.freeze({\n' +
+		enumValues +
+		'});\n' +
+		'\n' +
+		'export default ' + enumName + ';\n';
+
+	fs.writeFileSync(rootPath + '/' + configuration.modelsDestination + '/enum/' + enumName + '.js', content);
+}
+
 var executeCreateModelBase = function(name, definition) {
 	if (definition.type !== 'object') {
 		throw new Error('Schema definition for ' + name + ' is not of type "object"');
@@ -140,7 +161,12 @@ var executeCreateModelBase = function(name, definition) {
 
 	var propertyArray = new Array();
 	for (propertyName in definition.properties) {
-		propertyArray.push(new Property(propertyName, definition.properties[propertyName]));
+		const propertyDefinition = definition.properties[propertyName];
+		propertyArray.push(new Property(propertyName, propertyDefinition));
+
+		if (propertyDefinition.enum) {
+			executeCreateModelEnum(name, propertyName, propertyDefinition);
+		}
 	}
 
 	const content =
