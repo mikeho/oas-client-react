@@ -187,8 +187,8 @@ var executeCreateModelBase = function(name, definition) {
 		'\t * @return {' + name + '}\n' +
 		'\t */\n' +
 		'\tstatic create(genericObject) {\n' +
-		'\t\tconst new' + name + ' = new ' + name + '(ModelProxyClass.createByClassName);\n' +
-		'\t\tnew' + name + '.instantiate(_modelDefinition, genericObject)\n' +
+		'\t\tconst new' + name + ' = new ' + name + '();\n' +
+		'\t\tnew' + name + '.instantiate(_modelDefinition, genericObject, ModelProxyClass.createByClassName)\n' +
 		'\t\treturn new' + name + ';\n' +
 		'\t}\n' +
 		'\n' +
