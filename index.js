@@ -271,7 +271,16 @@ var executeCreateAggregateClientBase = function(definitions) {
 	const content =
 		importList +
 		'\n' +
+		'/**\n' +
+		' * Use globally to access any of the API Client Methods for the WebService\n' +
+		' */\n' +
 		'export default class Client {\n' +
+		'}\n' +
+		'\n' +
+		'/**\n' +
+		' * Use in a responseHandler if you want to ignore a given/specific response\n' +
+		' */\n' +
+		'export function ignoreResponse() {\n' +
 		'}\n' +
 		'\n' +
 		definitionList;
