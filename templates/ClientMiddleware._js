@@ -22,7 +22,7 @@ export default class ClientMiddleware {
 		const requestOptions = {
 			method: method,
 			credentials: 'same-origin',
-			headers: {}
+			headers: new Headers(),
 		};
 
 		return requestOptions;

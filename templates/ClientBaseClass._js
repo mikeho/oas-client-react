@@ -19,15 +19,15 @@ class ClientBaseClass {
 			switch (requestType) {
 			case 'json':
 				requestOptions.body = JSON.stringify(request);
-				requestOptions.headers['Content-Type'] = 'application/json';
+				requestOptions.headers.append('Content-Type', 'application/json');
 				break;
 			case 'text':
 				requestOptions.body = request;
-				requestOptions.headers['Content-Type'] = 'text/plain';
+				requestOptions.headers.append('Content-Type', 'text/plain');
 				break;
 			case 'form':
 				requestOptions.body = request;
-				requestOptions.headers['Content-Type'] = 'multipart/form-data';
+				requestOptions.headers.append('Content-Type', 'multipart/form-data');
 				break;
 			default:
 				throw new Error('unhandled requestType: ' + requestType);
