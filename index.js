@@ -38,14 +38,37 @@ exports.codegen = function (root) {
 		return;
 	}
 
+	// Setup Files and Folders for Models
 	fs.mkdirSync(rootPath + '/' + configuration.modelsDestination, {recursive: true});
 	fs.mkdirSync(rootPath + '/' + configuration.modelsDestination + '/base', {recursive: true});
 	fs.mkdirSync(rootPath + '/' + configuration.modelsDestination + '/enum', {recursive: true});
 
+	// Setup Files and Folders for Clients
+	fs.mkdirSync(rootPath + '/' + configuration.clientsDestination, {recursive: true});
+	fs.mkdirSync(rootPath + '/' + configuration.clientsDestination + '/base', {recursive: true});
+	fs.copyFileSync(__dirname + '/templates/ClientBaseClass._js', rootPath + '/' + configuration.clientsDestination + '/base/ClientBaseClass.js');
+	copyFileIfNotExists(__dirname + '/templates/ClientMiddleware._js', rootPath + '/' + configuration.clientsDestination + '/ClientMiddleware.js');
+
 	SwaggerParser.parse(configuration.swaggerUrl, swaggerParser_Parsed);
 };
 
+var copyFileIfNotExists = function(source, destination) {
+	try {
+		fs.statSync(destination);
+	} catch (error) {
+		if (error.code === 'ENOENT') {
+			// File Does Not Exist -- proceed with the copy
+			fs.copyFileSync(source, destination);
+		} else {
+			// Unknown error -- log to screen
+			console.error(error);
+			return;
+		}
+	}
+}
+
 var swaggerParser_Parsed = function(error, api) {
+	// Model
 	for (name in api.definitions) {
 		try {
 			fs.statSync(rootPath + '/' + configuration.modelsDestination + '/' + name + '.js');
@@ -62,10 +85,201 @@ var swaggerParser_Parsed = function(error, api) {
 		executeCreateModelBase(name, api.definitions[name]);
 	}
 
-	executeCreateAggregateBase(api.definitions);
+	executeCreateAggregateModelBase(api.definitions);
+
+	// Client
+	const clientObject = {};
+
+	for (path in api.paths) {
+		for (method in api.paths[path]) {
+			const apiDefinition = api.paths[path][method];
+			const operationId = apiDefinition.operationId;
+
+			if (!operationId) {
+				console.error(method + " at " + path + " has no operationId");
+				return;
+			}
+
+			const operationParts = operationId.split('::');
+
+			if (operationParts.length !== 2) {
+				console.error(method + " at " + path + " has an invalid operationId: " + operationId);
+				return;
+			}
+
+			if (!clientObject[operationParts[0]]) {
+				clientObject[operationParts[0]] = {}
+			}
+
+			clientObject[operationParts[0]][operationParts[1]] = apiDefinition;
+			apiDefinition.path = path;
+			apiDefinition.method = method;
+		}
+	}
+
+	for (name in clientObject) {
+		executeCreateClientBase(name, clientObject[name]);
+	}
+
+	executeCreateAggregateClientBase(clientObject);
 }
 
-var executeCreateAggregateBase = function(definitions) {
+var executeCreateClientBase_Helper = function(method, definition) {
+	let parameterJsDocArray = [];
+	let parameterSignatureArray = [];
+	let urlDefinition = "'" + definition.path + "'";
+	let requestPayload = '';
+
+	definition.parameters.forEach(parameter => {
+		let parameterName = '';
+		parameter.name.split('_').forEach(token => {
+			token = token.trim().toLowerCase();
+
+			if (!token.length) {
+				return;
+			}
+
+			if (parameterName.length === 0) {
+				parameterName = token;
+			} else {
+				parameterName += token.substring(0, 1).toUpperCase() + token.substring(1);
+			}
+		})
+
+		let property = null;
+
+		switch (parameter.in) {
+		case 'formData':
+			requestPayload = ", formData, 'formData'";
+			property = new Property(parameterName, parameter);
+			break;
+		case 'path':
+			property = new Property(parameterName, parameter);
+			urlDefinition = urlDefinition.replace('{' + parameter.name + '}', "' + encodeURI(" + parameterName + ") + '");
+			break;
+		case 'body':
+			requestPayload = ", " + parameterName + ", 'json'";
+			property = new Property(parameterName, parameter.schema);
+			break;
+		}
+
+		parameterJsDocArray.push('\t * @param {' + property.getJsDocType() + '} ' + parameterName + '\n');
+		parameterSignatureArray.push(parameterName);
+	});
+
+	let casesArray = [];
+	let responseHandlerJsDoc = [];
+	for (statusCode in definition.responses) {
+		let type = '';
+
+		let content =
+			'\t\t\t\tcase ' + statusCode + ':\n' +
+			'\t\t\t\t\tif (responseHandler.status' + statusCode + ') {\n';
+
+		if (definition.responses[statusCode].schema) {
+			const property = new Property(null, definition.responses[statusCode].schema);
+			type = property.getJsDocType();
+			content +=
+				'\t\t\t\t\t\tresponse.json()\n' +
+				'\t\t\t\t\t\t\t.then(responseJson => {\n' +
+				'\t\t\t\t\t\t\t\tresponseHandler.status' + statusCode + '(responseJson);\n' +
+				'\t\t\t\t\t\t\t})\n' +
+				'\t\t\t\t\t\t\t.catch(responseHandler.error);\n' +
+				'\t\t\t\t\t\treturn;\n'
+		} else {
+			type = 'string';
+			content +=
+				'\t\t\t\t\t\tresponse.text()\n' +
+				'\t\t\t\t\t\t\t.then(responseText => {\n' +
+				'\t\t\t\t\t\t\t\tresponseHandler.status' + statusCode + '(responseText);\n' +
+				'\t\t\t\t\t\t\t})\n' +
+				'\t\t\t\t\t\t\t.catch(responseHandler.error);\n' +
+				'\t\t\t\t\t\treturn;\n'
+		}
+
+		content +=
+			'\t\t\t\t\t}\n' +
+			'\t\t\t\t\tbreak;\n'
+
+
+		casesArray.push(content);
+
+		responseHandlerJsDoc.push('status' + statusCode + ': function(' + type + '), ');
+	}
+
+	// Last Items
+	parameterSignatureArray.push('responseHandler');
+	urlDefinition = urlDefinition.replace(" + ''", "");
+
+	// @param {{status200: function(Session), status404: function(string), }} handler
+
+	let content =
+		'\t/**\n' +
+		'\t * ' + definition.summary + '\n' +
+		parameterJsDocArray.join('') +
+		'\t * @param {{' + responseHandlerJsDoc.join('') + 'error: function(error), else: function(string, string)}} responseHandler\n' +
+		'\t */\n' +
+		'\t' + method + '(' + parameterSignatureArray.join(', ') + ') {\n' +
+		'\t\tresponseHandler = this.generateResponseHandler(responseHandler);\n' +
+		'\t\tconst url = ' + urlDefinition + ';\n' +
+		'\t\t// noinspection Duplicates\n' +
+		"\t\tthis.executeApiCall(url, '" + definition.method + "'" + requestPayload + ')\n' +
+		'\t\t\t.then(response => {\n' +
+		'\t\t\t\tswitch (response.status) {\n' +
+		casesArray.join('') +
+		'\t\t\t\t}\n' +
+		'\n' +
+		'\t\t\t\t// If we are here, we basically have a response statusCode that we were npt expecting or are not set to handle\n' +
+		'\t\t\t\t// Go ahead and fall back to the catch-all\n' +
+		'\t\t\t\tthis.handleUnhandledResponse(response, responseHandler);\n' +
+		'\t\t\t})\n' +
+		'\t\t\t.catch(error => {\n' +
+		'\t\t\t\tresponseHandler.error(error);\n' +
+		'\t\t\t});\n' +
+		'\t}\n';
+
+
+
+	return content;
+}
+
+var executeCreateClientBase = function(name, definition) {
+	let content =
+		'import ClientBaseClass from "./ClientBaseClass";\n' +
+		'\n' +
+		'export default class ' + name + ' extends ClientBaseClass {\n';
+
+	for (method in definition) {
+		content += executeCreateClientBase_Helper(method, definition[method]);
+		content += '\n';
+	}
+
+	content += '}\n';
+
+	fs.writeFileSync(rootPath + '/' + configuration.clientsDestination + '/base/' + name + '.js', content);
+}
+
+var executeCreateAggregateClientBase = function(definitions) {
+	let importList = '';
+	let definitionList = '';
+
+	for (name in definitions) {
+		importList += 'import ' + name + ' from "./' + name + '";\n';
+		definitionList += 'Client.' + name + ' = new ' + name + '();\n';
+	}
+
+	const content =
+		importList +
+		'\n' +
+		'export default class Client {\n' +
+		'}\n' +
+		'\n' +
+		definitionList;
+
+	fs.writeFileSync(rootPath + '/' + configuration.clientsDestination + '/base/Client.js', content);
+}
+
+var executeCreateAggregateModelBase = function(definitions) {
 	let importList = '';
 	let switchList = '';
 
