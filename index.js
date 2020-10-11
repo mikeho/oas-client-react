@@ -124,11 +124,16 @@ var swaggerParser_Parsed = function(error, api) {
 	executeCreateAggregateClientBase(clientObject);
 }
 
-var executeCreateClientBase_Helper = function(method, definition) {
+var executeCreateClientBase_Helper = function(method, definition, imports) {
 	let parameterJsDocArray = [];
 	let parameterSignatureArray = [];
 	let urlDefinition = "'" + definition.path + "'";
 	let requestPayload = '';
+	let requestPayloadSetupFormData = '';
+	let requestPayloadSetupQuery = '';
+
+	let isFormData = false;
+	let isJsonBody = false;
 
 	definition.parameters.forEach(parameter => {
 		let parameterName = '';
@@ -149,28 +154,56 @@ var executeCreateClientBase_Helper = function(method, definition) {
 		let property = null;
 
 		switch (parameter.in) {
-		case 'formData':
-			requestPayload = ", formData, 'formData'";
-			property = new Property(parameterName, parameter);
-			break;
-		case 'path':
-			property = new Property(parameterName, parameter);
-			urlDefinition = urlDefinition.replace('{' + parameter.name + '}', "' + encodeURI(" + parameterName + ") + '");
-			break;
-		case 'body':
-			requestPayload = ", " + parameterName + ", 'json'";
-			property = new Property(parameterName, parameter.schema);
-			break;
+			case 'query':
+				if (!requestPayloadSetupQuery) {
+					requestPayloadSetupQuery = '\n\t\tconst queryArray = [];\n';
+				}
+				requestPayloadSetupQuery += '\t\tif ((' + parameterName + ' !== undefined) && (' + parameterName + '.length)) ' +
+					"queryArray.push('" + parameter.name + "=' + encodeURI(" + parameterName + "));\n";
+				property = new Property(parameterName, parameter);
+				break;
+			case 'formData':
+				if (isJsonBody) {
+					throw new Error('Cannot have both body and formData in the same request: ' + method);
+				}
+				isFormData = true;
+
+				if (!requestPayloadSetupFormData.length) {
+					requestPayloadSetupFormData = '\n\t\tconst formData = new FormData();\n';
+				}
+				requestPayloadSetupFormData += "\t\tformData.append('" + parameter.name + "', " + parameterName + ");\n";
+
+				requestPayload = ", formData, 'form'";
+				property = new Property(parameterName, parameter);
+				break;
+			case 'path':
+				property = new Property(parameterName, parameter);
+				urlDefinition = urlDefinition.replace('{' + parameter.name + '}', "' +\n\t\t\t(" + parameterName + " ? encodeURI(" + parameterName + ") : '') + '");
+				break;
+			case 'body':
+				if (isFormData) {
+					throw new Error('Cannot have both body and formData in the same request: ' + method);
+				}
+				isJsonBody = true;
+				requestPayload = ", " + parameterName + ", 'json'";
+				property = new Property(parameterName, parameter.schema);
+				break;
 		}
 
 		parameterJsDocArray.push('\t * @param {' + property.getJsDocType() + '} ' + parameterName + '\n');
 		parameterSignatureArray.push(parameterName);
 	});
 
+	// Add Query to URL if applicable
+	if (requestPayloadSetupQuery.length) {
+		urlDefinition += " +\n\t\t\t(queryArray.length ? '?' + queryArray.join('&') : null)";
+	}
+
 	let casesArray = [];
 	let responseHandlerJsDoc = [];
 	for (statusCode in definition.responses) {
 		let type = '';
+		let arrayFlag = false;
 
 		let content =
 			'\t\t\t\tcase ' + statusCode + ':\n' +
@@ -179,10 +212,15 @@ var executeCreateClientBase_Helper = function(method, definition) {
 		if (definition.responses[statusCode].schema) {
 			const property = new Property(null, definition.responses[statusCode].schema);
 			type = property.getJsDocType();
+			if (type.substring(0, 1) === '[') {
+				arrayFlag = true;
+				type = type.substring(1, type.length - 1);
+			}
+			imports[type] = type;
 			content +=
 				'\t\t\t\t\t\tresponse.json()\n' +
 				'\t\t\t\t\t\t\t.then(responseJson => {\n' +
-				'\t\t\t\t\t\t\t\tresponseHandler.status' + statusCode + '(responseJson);\n' +
+				'\t\t\t\t\t\t\t\tresponseHandler.status' + statusCode + '(' + type + '.' + (arrayFlag ? 'createArray' : 'create') + '(responseJson));\n' +
 				'\t\t\t\t\t\t\t})\n' +
 				'\t\t\t\t\t\t\t.catch(responseHandler.error);\n' +
 				'\t\t\t\t\t\treturn;\n'
@@ -204,7 +242,7 @@ var executeCreateClientBase_Helper = function(method, definition) {
 
 		casesArray.push(content);
 
-		responseHandlerJsDoc.push('status' + statusCode + ': function(' + type + '), ');
+		responseHandlerJsDoc.push('status' + statusCode + ': function(' + type + (arrayFlag ? '[]' : '') + '), ');
 	}
 
 	// Last Items
@@ -217,11 +255,13 @@ var executeCreateClientBase_Helper = function(method, definition) {
 		'\t/**\n' +
 		'\t * ' + definition.summary + '\n' +
 		parameterJsDocArray.join('') +
-		'\t * @param {{' + responseHandlerJsDoc.join('') + 'error: function(error), else: function(string, string)}} responseHandler\n' +
+		'\t * @param {{' + responseHandlerJsDoc.join('') + 'error: function(error), else: function(integer, string)}} responseHandler\n' +
 		'\t */\n' +
 		'\t' + method + '(' + parameterSignatureArray.join(', ') + ') {\n' +
 		'\t\tresponseHandler = this.generateResponseHandler(responseHandler);\n' +
+		requestPayloadSetupQuery + '\n' +
 		'\t\tconst url = ' + urlDefinition + ';\n' +
+		requestPayloadSetupFormData + '\n' +
 		'\t\t// noinspection Duplicates\n' +
 		"\t\tthis.executeApiCall(url, '" + definition.method + "'" + requestPayload + ')\n' +
 		'\t\t\t.then(response => {\n' +
@@ -244,17 +284,26 @@ var executeCreateClientBase_Helper = function(method, definition) {
 }
 
 var executeCreateClientBase = function(name, definition) {
-	let content =
-		'import ClientBaseClass from "./ClientBaseClass";\n' +
-		'\n' +
-		'export default class ' + name + ' extends ClientBaseClass {\n';
 
+	let methods = '';
+	let imports = {};
 	for (method in definition) {
-		content += executeCreateClientBase_Helper(method, definition[method]);
-		content += '\n';
+		methods += executeCreateClientBase_Helper(method, definition[method], imports);
+		methods += '\n';
 	}
 
-	content += '}\n';
+	let importLines = '';
+	for (type in imports) {
+		importLines += 'import ' + type + ' from "../../models/' + type + '";\n';
+	}
+
+	const content =
+		'import ClientBaseClass from "./ClientBaseClass";\n' +
+		importLines +
+		'\n' +
+		'export default class ' + name + ' extends ClientBaseClass {\n' +
+		methods +
+		'}\n';
 
 	fs.writeFileSync(rootPath + '/' + configuration.clientsDestination + '/base/' + name + '.js', content);
 }

@@ -27,7 +27,6 @@ class ClientBaseClass {
 				break;
 			case 'form':
 				requestOptions.body = request;
-				requestOptions.headers.append('Content-Type', 'multipart/form-data');
 				break;
 			default:
 				throw new Error('unhandled requestType: ' + requestType);
