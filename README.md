@@ -16,19 +16,19 @@ This library is able to code-generate all of the **paths** and **definitions** i
 
 Quick Installation
 ------------------
-Begin by installing the package through NPM.
+Begin by installing the package through NPM:
 
 ```
 npm install @quasidea/oas-client-react
 ```
 
-Run the command line installer for the OAS Client
+Run the command line tool for the OAS Client to setup/initialize the settings:
 
 ```
-npx oas-client install URL
+npx oas-client init URL
 ```
 
-where URL is the URL of the swagger file that your application will be the client of.
+(where URL is the URL of the swagger file that your application will be the client of)
 
 This command will create a `oas-client.json` settings file that contains the following three properties:
 
