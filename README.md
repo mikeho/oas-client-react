@@ -152,9 +152,9 @@ const person = new Person();
 person.email = 'johndoe@example.com';
 person.password = 'mypassword';
 
-Client.doSomething(id, person, {
-	status200: doSomethingResponse => {
-		alert("The call was successful... the configuration is " + doSomethingResponse.configuration);
+Client.SomeApi.doSomething(id, person, {
+	status200: responseObject => {
+		alert("The call was successful... the configuration is " + responseObject.configuration);
 	},
 	status404: responseText => {
 		alert('The ID was not found.  Here is the response from the server: ' + responseText);
@@ -164,6 +164,7 @@ Client.doSomething(id, person, {
 	},
 	else: (statusCode, responseText) => {
 		alert('Oops, we were not expecting a HTTP status code of ' + statusCode);
+		console.error('unhandled response to status code ' + statusCode + ': ' + responseText);
 	},
 	error: error => {
 		alert('An error occurred.  Please view the console for more information.');
