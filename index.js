@@ -135,64 +135,66 @@ var executeCreateClientBase_Helper = function(method, definition, imports) {
 	let isFormData = false;
 	let isJsonBody = false;
 
-	definition.parameters.forEach(parameter => {
-		let parameterName = '';
-		parameter.name.split('_').forEach(token => {
-			token = token.trim().toLowerCase();
+	if (definition.parameters) {
+		definition.parameters.forEach(parameter => {
+			let parameterName = '';
+			parameter.name.split('_').forEach(token => {
+				token = token.trim().toLowerCase();
 
-			if (!token.length) {
-				return;
+				if (!token.length) {
+					return;
+				}
+
+				if (parameterName.length === 0) {
+					parameterName = token;
+				} else {
+					parameterName += token.substring(0, 1).toUpperCase() + token.substring(1);
+				}
+			})
+
+			let property = null;
+
+			switch (parameter.in) {
+				case 'query':
+					if (!requestPayloadSetupQuery) {
+						requestPayloadSetupQuery = '\n\t\tconst queryArray = [];\n';
+					}
+					requestPayloadSetupQuery += '\t\tif ((' + parameterName + ' !== undefined) && (' + parameterName + '.length)) ' +
+						"queryArray.push('" + parameter.name + "=' + encodeURI(" + parameterName + "));\n";
+					property = new Property(parameterName, parameter);
+					break;
+				case 'formData':
+					if (isJsonBody) {
+						throw new Error('Cannot have both body and formData in the same request: ' + method);
+					}
+					isFormData = true;
+
+					if (!requestPayloadSetupFormData.length) {
+						requestPayloadSetupFormData = '\n\t\tconst formData = new FormData();\n';
+					}
+					requestPayloadSetupFormData += "\t\tformData.append('" + parameter.name + "', " + parameterName + ");\n";
+
+					requestPayload = ", formData, 'form'";
+					property = new Property(parameterName, parameter);
+					break;
+				case 'path':
+					property = new Property(parameterName, parameter);
+					urlDefinition = urlDefinition.replace('{' + parameter.name + '}', "' +\n\t\t\t(" + parameterName + " ? encodeURI(" + parameterName + ") : '') + '");
+					break;
+				case 'body':
+					if (isFormData) {
+						throw new Error('Cannot have both body and formData in the same request: ' + method);
+					}
+					isJsonBody = true;
+					requestPayload = ", " + parameterName + ", 'json'";
+					property = new Property(parameterName, parameter.schema);
+					break;
 			}
 
-			if (parameterName.length === 0) {
-				parameterName = token;
-			} else {
-				parameterName += token.substring(0, 1).toUpperCase() + token.substring(1);
-			}
-		})
-
-		let property = null;
-
-		switch (parameter.in) {
-			case 'query':
-				if (!requestPayloadSetupQuery) {
-					requestPayloadSetupQuery = '\n\t\tconst queryArray = [];\n';
-				}
-				requestPayloadSetupQuery += '\t\tif ((' + parameterName + ' !== undefined) && (' + parameterName + '.length)) ' +
-					"queryArray.push('" + parameter.name + "=' + encodeURI(" + parameterName + "));\n";
-				property = new Property(parameterName, parameter);
-				break;
-			case 'formData':
-				if (isJsonBody) {
-					throw new Error('Cannot have both body and formData in the same request: ' + method);
-				}
-				isFormData = true;
-
-				if (!requestPayloadSetupFormData.length) {
-					requestPayloadSetupFormData = '\n\t\tconst formData = new FormData();\n';
-				}
-				requestPayloadSetupFormData += "\t\tformData.append('" + parameter.name + "', " + parameterName + ");\n";
-
-				requestPayload = ", formData, 'form'";
-				property = new Property(parameterName, parameter);
-				break;
-			case 'path':
-				property = new Property(parameterName, parameter);
-				urlDefinition = urlDefinition.replace('{' + parameter.name + '}', "' +\n\t\t\t(" + parameterName + " ? encodeURI(" + parameterName + ") : '') + '");
-				break;
-			case 'body':
-				if (isFormData) {
-					throw new Error('Cannot have both body and formData in the same request: ' + method);
-				}
-				isJsonBody = true;
-				requestPayload = ", " + parameterName + ", 'json'";
-				property = new Property(parameterName, parameter.schema);
-				break;
-		}
-
-		parameterJsDocArray.push('\t * @param {' + property.getJsDocType() + '} ' + parameterName + '\n');
-		parameterSignatureArray.push(parameterName);
-	});
+			parameterJsDocArray.push('\t * @param {' + property.getJsDocType() + '} ' + parameterName + '\n');
+			parameterSignatureArray.push(parameterName);
+		});
+	}
 
 	// Add Query to URL if applicable
 	if (requestPayloadSetupQuery.length) {
