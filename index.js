@@ -472,6 +472,9 @@ var executeCreateModelBase = function(name, definition) {
 		'\t * @return {[' + name + ']}\n' +
 		'\t */\n' +
 		'\tstatic createArray(genericArray) {\n' +
+		'\t\tif (genericArray === null) {\n' +
+		'\t\t\treturn null;\n' +
+		'\t\t}\n\n' +
 		'\t\tconst new' + name + 'Array = [];\n' +
 		'\t\tgenericArray.forEach(genericObject => {\n' +
 		'\t\t\tnew' + name + 'Array.push(' + name + '.create(genericObject));\n' +
