@@ -362,8 +362,8 @@ var executeCreateAggregateModelBase = function(definitions) {
 		'\tstatic createByClassName(className, genericObject) {\n' +
 		'\t\tswitch (className) {\n' +
 		switchList +
-		'\t\t\tdefault:\n' +
-		'\t\t\t\tthrow new Error(\'Undefined model class: \' + className);\n' +
+		'\t\tdefault:\n' +
+		'\t\t\tthrow new Error(\'Undefined model class: \' + className);\n' +
 		'\t\t}\n' +
 		'\t}\n' +
 		'}\n' +
