@@ -1,6 +1,6 @@
 {
   "name": "@quasidea/oas-client-react",
-  "version": "1.0.16",
+  "version": "1.0.17",
   "description": "Code generation-based Open API Specification (a.k.a. Swagger) client for React",
   "main": "index.js",
   "scripts": {
