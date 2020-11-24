@@ -70,4 +70,4 @@ class ClientBaseClass {
 	}
 }
 
-export default ClientBaseClass
+export default ClientBaseClass;

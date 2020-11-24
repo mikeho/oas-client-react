@@ -345,8 +345,8 @@ var executeCreateAggregateModelBase = function(definitions) {
 
 	for (name in definitions) {
 		importList += 'import ' + name + ' from "../' + name + '";\n';
-		switchList += "\t\t\tcase '" + name + "':\n" +
-			"\t\t\t\treturn " + name + ".create(genericObject);\n";
+		switchList += "\t\tcase '" + name + "':\n" +
+			"\t\t\treturn " + name + ".create(genericObject);\n";
 	}
 
 	const content =
