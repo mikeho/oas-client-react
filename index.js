@@ -218,14 +218,25 @@ var executeCreateClientBase_Helper = function(method, definition, imports) {
 				arrayFlag = true;
 				type = type.substring(1, type.length - 1);
 			}
-			imports[type] = type;
-			content +=
-				'\t\t\t\t\t\tresponse.json()\n' +
-				'\t\t\t\t\t\t\t.then(responseJson => {\n' +
-				'\t\t\t\t\t\t\t\tresponseHandler.status' + statusCode + '(' + type + '.' + (arrayFlag ? 'createArray' : 'create') + '(responseJson));\n' +
-				'\t\t\t\t\t\t\t})\n' +
-				'\t\t\t\t\t\t\t.catch(responseHandler.error);\n' +
-				'\t\t\t\t\t\treturn;\n'
+
+			if (type !== 'object') {
+				imports[type] = type;
+				content +=
+					'\t\t\t\t\t\tresponse.json()\n' +
+					'\t\t\t\t\t\t\t.then(responseJson => {\n' +
+					'\t\t\t\t\t\t\t\tresponseHandler.status' + statusCode + '(' + type + '.' + (arrayFlag ? 'createArray' : 'create') + '(responseJson));\n' +
+					'\t\t\t\t\t\t\t})\n' +
+					'\t\t\t\t\t\t\t.catch(responseHandler.error);\n' +
+					'\t\t\t\t\t\treturn;\n'
+			} else {
+				content +=
+					'\t\t\t\t\t\tresponse.json()\n' +
+					'\t\t\t\t\t\t\t.then(responseJson => {\n' +
+					'\t\t\t\t\t\t\t\tresponseHandler.status' + statusCode + '(responseJson);\n' +
+					'\t\t\t\t\t\t\t})\n' +
+					'\t\t\t\t\t\t\t.catch(responseHandler.error);\n' +
+					'\t\t\t\t\t\treturn;\n'
+			}
 		} else {
 			type = 'string';
 			content +=
