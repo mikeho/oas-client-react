@@ -445,12 +445,29 @@ var executeCreateModelBase = function(name, definition) {
 	}
 
 	var propertyArray = new Array();
+	var enumConstArray = new Array();
 	for (propertyName in definition.properties) {
 		const propertyDefinition = definition.properties[propertyName];
 		propertyArray.push(new Property(propertyName, propertyDefinition));
 
 		if (propertyDefinition.enum) {
 			executeCreateModelEnum(name, propertyName, propertyDefinition);
+		}
+
+		// Add a ResultParameter Enum/Const definition, if applicable
+		if ((propertyName === 'resultParameter') && propertyDefinition.description) {
+			let description = propertyDefinition.description.trim();
+			if ((description.substring(0, 1) === '[') && (description.substring(description.length - 1) === ']')) {
+				description = description.substring(1, description.length - 1);
+
+				description.split(',').forEach(enumName => {
+					enumConstArray.push(
+						'/**\n' +
+						' * @type {string} OrderBy' + enumName.trim() + '\n' +
+						' */\n' +
+						name + 'Base.OrderBy' + enumName.trim() + " = '" + enumName.trim().toLowerCase() + "';");
+				});
+			}
 		}
 	}
 
@@ -494,6 +511,7 @@ var executeCreateModelBase = function(name, definition) {
 		'\t}\n' +
 		'}\n' +
 		'\n' +
+		(enumConstArray.length ? enumConstArray.join('\n\n') + '\n\n' : '') +
 		'const _modelDefinition = [\n' +
 		generateModelDefinitionList(propertyArray) +
 		'];\n' +
