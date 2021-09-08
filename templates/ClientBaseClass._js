@@ -33,7 +33,17 @@ class ClientBaseClass {
 			}
 		}
 
-		return await fetch(url, requestOptions);
+		if (ClientMiddleware.onApiCall) {
+			ClientMiddleware.onApiCall(url, method, request, requestType);
+		}
+
+		const promise = await fetch(url, requestOptions);
+
+		if (ClientMiddleware.onApiResponse) {
+			ClientMiddleware.onApiResponse(url, method, request, requestType);
+		}
+
+		return promise;
 	}
 
 	/**

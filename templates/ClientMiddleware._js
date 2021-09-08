@@ -29,6 +29,36 @@ export default class ClientMiddleware {
 	}
 
 	/**
+	 * This method is called on EVERY API call.
+	 * Feel free to modify, or you can remove this method altogether if an onApiCall handler is not needed.
+	 *
+	 * @method onApiCall
+	 * @param {string} url
+	 * @param {string} method
+	 * @param [request]
+	 * @param {string} [requestType]
+	 */
+	// eslint-disable-next-line no-unused-vars
+	static onApiCall(url, method, request, requestType) {
+		console.log('[API Call] ' + method.toUpperCase() + ' ' + url);
+	}
+
+	/**
+	 * This method is called on EVERY API response.
+	 * Feel free to modify, or you can remove this method altogether if an onApiResponse handler is not needed.
+	 *
+	 * @method onApiResponse
+	 * @param {string} url
+	 * @param {string} method
+	 * @param [request]
+	 * @param {string} [requestType]
+	 */
+	// eslint-disable-next-line no-unused-vars
+	static onApiResponse(url, method, request, requestType) {
+		console.log('[API Response] ' + method.toUpperCase() + ' ' + url);
+	}
+
+	/**
 	 * The default/initial set of response handlers for the response to any fetch() call.
 	 * This is designed to be altered.
 	 * @return {object}
