@@ -450,8 +450,14 @@ var executeCreateModelBase = function(name, definition) {
 		const propertyDefinition = definition.properties[propertyName];
 		propertyArray.push(new Property(propertyName, propertyDefinition));
 
+		// If it's an ENUM, we need to generate the ENUM class
 		if (propertyDefinition.enum) {
 			executeCreateModelEnum(name, propertyName, propertyDefinition);
+		}
+
+		// If it's an array of ENUM, we need to generate the ENUM class
+		if (propertyDefinition.items && propertyDefinition.items.enum) {
+			executeCreateModelEnum(name, propertyName, propertyDefinition.items);
 		}
 
 		// Add a ResultParameter Enum/Const definition, if applicable
