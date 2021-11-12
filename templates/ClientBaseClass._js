@@ -37,7 +37,13 @@ class ClientBaseClass {
 			ClientMiddleware.onApiCall(url, method, request, requestType);
 		}
 
-		const promise = await fetch(url, requestOptions).catch(error => console.log(error));
+		const promise = await fetch(url, requestOptions).catch(error => {
+			if (ClientMiddleware.onApiResponse) {
+				ClientMiddleware.onApiResponse(url, method, request, requestType);
+			}
+
+			throw error;
+		});
 
 		if (ClientMiddleware.onApiResponse) {
 			ClientMiddleware.onApiResponse(url, method, request, requestType);
