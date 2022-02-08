@@ -159,7 +159,7 @@ var executeCreateClientBase_Helper = function(method, definition, imports) {
 					if (!requestPayloadSetupQuery) {
 						requestPayloadSetupQuery = '\n\t\tconst queryArray = [];\n';
 					}
-					requestPayloadSetupQuery += '\t\tif ((' + parameterName + ' !== undefined) && (' + parameterName + '.length)) ' +
+					requestPayloadSetupQuery += '\t\tif ((' + parameterName + ' !== undefined) && (' + parameterName + ' !== null) && (' + parameterName + '.length)) ' +
 						"queryArray.push('" + parameter.name + "=' + encodeURI(" + parameterName + "));\n";
 					property = new Property(parameterName, parameter);
 					break;
@@ -198,7 +198,7 @@ var executeCreateClientBase_Helper = function(method, definition, imports) {
 
 	// Add Query to URL if applicable
 	if (requestPayloadSetupQuery.length) {
-		urlDefinition += " +\n\t\t\t(queryArray.length ? '?' + queryArray.join('&') : null)";
+		urlDefinition += " +\n\t\t\t(queryArray.length ? '?' + queryArray.join('&') : '')";
 	}
 
 	let casesArray = [];
