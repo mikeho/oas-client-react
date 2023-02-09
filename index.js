@@ -50,7 +50,7 @@ exports.codegen = async function (root) {
 		fs.mkdirSync(rootPath + '/' + configuration.clientsDestination + '/base', {recursive: true});
 		fs.copyFileSync(__dirname + '/templates/ClientBaseClass._js', rootPath + '/' + configuration.clientsDestination + '/base/ClientBaseClass.js');
 		fs.copyFileSync(__dirname + '/templates/ClientOptions._js', rootPath + '/' + configuration.clientsDestination + '/base/ClientOptions.js');
-		copyFileIfNotExists(__dirname + '/templates/ClientMiddleware._js', rootPath + '/' + configuration.clientsDestination + '/DefaultClientOptions.js');
+		copyFileIfNotExists(__dirname + '/templates/DefaultClientOptions._js', rootPath + '/' + configuration.clientsDestination + '/DefaultClientOptions.js');
 
 		await SwaggerParser.parse(configuration.swaggerUrl, (error, api) => {
 			const helper = new CodegenHelper(rootPath, configuration);
