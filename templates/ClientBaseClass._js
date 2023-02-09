@@ -1,4 +1,4 @@
-import ClientMiddleware from "../ClientMiddleware";
+import DefaultClientOptions from "../DefaultClientOptions";
 
 class ClientBaseClass {
 	/**
@@ -8,12 +8,17 @@ class ClientBaseClass {
 	 * @param {string} method
 	 * @param [request]
 	 * @param {string} [requestType]
+	 * @param {ClientOptions|null} options
 	 * @returns {Promise}
 	 */
-	async executeApiCall(url, method, request, requestType) {
-		url = ClientMiddleware.getEndpointUrl() + url;
+	async executeApiCall(url, method, request, requestType, options) {
+		url = ((options && options.getEndpointUrl) ?
+			options.getEndpointUrl() :
+			DefaultClientOptions.getEndpointUrl()) + url;
 
-		const requestOptions = ClientMiddleware.generateRequestOptionsForMethod(method);
+		const requestOptions = (options && options.generateRequestOptionsForMethod) ?
+			options.generateRequestOptionsForMethod(method) :
+			DefaultClientOptions.generateRequestOptionsForMethod(method);
 
 		if (request) {
 			switch (requestType) {
@@ -33,38 +38,40 @@ class ClientBaseClass {
 			}
 		}
 
-		if (ClientMiddleware.onApiCall) {
-			ClientMiddleware.onApiCall(url, method, request, requestType);
+		if (options && (options.onApiCall !== null)) {
+			if (options.onApiCall) options.onApiCall(url, method, request, requestType);
+		} else if (DefaultClientOptions.onApiCall) {
+			DefaultClientOptions.onApiCall(url, method, request, requestType);
 		}
 
 		const promise = await fetch(url, requestOptions).catch(error => {
-			if (ClientMiddleware.onApiResponse) {
-				ClientMiddleware.onApiResponse(url, method, request, requestType);
+			if (options && (options.onApiResponse !== null)) {
+				if (options.onApiResponse) options.onApiResponse(url, method, request, requestType);
+			} else if (DefaultClientOptions.onApiResponse) {
+				DefaultClientOptions.onApiResponse(url, method, request, requestType);
 			}
 
 			throw error;
 		});
 
-		if (ClientMiddleware.onApiResponse) {
-			ClientMiddleware.onApiResponse(url, method, request, requestType);
+		if (options && (options.onApiResponse !== null)) {
+			if (options.onApiResponse) options.onApiResponse(url, method, request, requestType);
+		} else if (DefaultClientOptions.onApiResponse) {
+			DefaultClientOptions.onApiResponse(url, method, request, requestType);
 		}
 
 		return promise;
 	}
 
 	/**
-	 * @return {string}
-	 */
-	getEndpointUrl() {
-		return ClientMiddleware.getEndpointUrl();
-	}
-
-	/**
 	 * @param {object} handler
+	 * @param {ClientOptions|null} options
 	 * @return {object}
 	 */
-	generateResponseHandler(handler) {
-		const responseHandler = ClientMiddleware.generateDefaultResponseHandler();
+	generateResponseHandler(handler, options) {
+		const responseHandler = (options && options.generateDefaultResponseHandler) ?
+			options.generateDefaultResponseHandler() :
+			DefaultClientOptions.generateDefaultResponseHandler();
 		Object.assign(responseHandler, handler);
 		return responseHandler;
 	}

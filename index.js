@@ -49,7 +49,8 @@ exports.codegen = async function (root) {
 		fs.mkdirSync(rootPath + '/' + configuration.clientsDestination, {recursive: true});
 		fs.mkdirSync(rootPath + '/' + configuration.clientsDestination + '/base', {recursive: true});
 		fs.copyFileSync(__dirname + '/templates/ClientBaseClass._js', rootPath + '/' + configuration.clientsDestination + '/base/ClientBaseClass.js');
-		copyFileIfNotExists(__dirname + '/templates/ClientMiddleware._js', rootPath + '/' + configuration.clientsDestination + '/ClientMiddleware.js');
+		fs.copyFileSync(__dirname + '/templates/ClientOptions._js', rootPath + '/' + configuration.clientsDestination + '/base/ClientOptions.js');
+		copyFileIfNotExists(__dirname + '/templates/ClientMiddleware._js', rootPath + '/' + configuration.clientsDestination + '/DefaultClientOptions.js');
 
 		await SwaggerParser.parse(configuration.swaggerUrl, (error, api) => {
 			const helper = new CodegenHelper(rootPath, configuration);
@@ -277,6 +278,7 @@ class CodegenHelper {
 
 		// Last Items
 		parameterSignatureArray.push('responseHandler');
+		parameterSignatureArray.push('options');
 		urlDefinition = urlDefinition.replace(" + ''", "");
 
 		// @param {{status200: function(Session), status404: function(string), }} handler
@@ -286,14 +288,15 @@ class CodegenHelper {
 			'\t * ' + definition.summary + '\n' +
 			parameterJsDocArray.join('') +
 			'\t * @param {{' + responseHandlerJsDoc.join('') + 'error: function(error), else: function(integer, string)}} responseHandler\n' +
+			'\t * @param {ClientOptions|null} options optional overrides on the DefaultClientOptions\n' +
 			'\t */\n' +
 			'\t' + method + '(' + parameterSignatureArray.join(', ') + ') {\n' +
-			'\t\tresponseHandler = this.generateResponseHandler(responseHandler);\n' +
+			'\t\tresponseHandler = this.generateResponseHandler(responseHandler, options);\n' +
 			requestPayloadSetupQuery + '\n' +
 			'\t\tconst url = ' + urlDefinition + ';\n' +
 			requestPayloadSetupFormData + '\n' +
 			'\t\t// noinspection Duplicates\n' +
-			"\t\tthis.executeApiCall(url, '" + definition.method + "'" + requestPayload + ')\n' +
+			"\t\tthis.executeApiCall(url, '" + definition.method + "'" + requestPayload + ', options)\n' +
 			'\t\t\t.then(response => {\n' +
 			'\t\t\t\tswitch (response.status) {\n' +
 			casesArray.join('') +

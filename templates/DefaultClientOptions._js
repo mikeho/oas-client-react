@@ -1,8 +1,9 @@
 /**
- * This is middleware for ALL client API webservice calls.
+ * This is the default client options / middleware for ALL client API webservice calls.
  * This file is designed to be altered.
+ * It can also be overridden per-request by passing in a ClientOptions object into any API call.
  */
-export default class ClientMiddleware {
+export default class DefaultClientOptions {
 	/**
 	 * The root Endpoint URL for all webservice method calls in this Client.
 	 * This is designed to be altered.
