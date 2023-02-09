@@ -20,6 +20,8 @@
   },
   "homepage": "https://github.com/mikeho/oas-client-react#readme",
   "dependencies": {
+    "ajv": "^8.11.2",
+    "ajv-draft-04": "^1.0.0",
     "@apidevtools/swagger-parser": "^10.0.1"
   }
 }
