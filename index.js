@@ -219,6 +219,11 @@ class CodegenHelper {
 			urlDefinition += " +\n\t\t\t(queryArray.length ? '?' + queryArray.join('&') : '')";
 		}
 
+		// Explicitly Set requestPayloads to null if needed
+		if (requestPayload === "") {
+			requestPayload = ", null, null";
+		}
+
 		let casesArray = [];
 		let responseHandlerJsDoc = [];
 		for (var statusCode in definition.responses) {
