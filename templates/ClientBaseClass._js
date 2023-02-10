@@ -38,14 +38,14 @@ class ClientBaseClass {
 			}
 		}
 
-		if (options && (options.onApiCall !== null)) {
+		if (options && (options.onApiCall !== null) && (options.onApiCall !== undefined)) {
 			if (options.onApiCall) options.onApiCall(url, method, request, requestType);
 		} else if (DefaultClientOptions.onApiCall) {
 			DefaultClientOptions.onApiCall(url, method, request, requestType);
 		}
 
 		const promise = await fetch(url, requestOptions).catch(error => {
-			if (options && (options.onApiResponse !== null)) {
+			if (options && (options.onApiResponse !== null) && (options.onApiResponse !== undefined)) {
 				if (options.onApiResponse) options.onApiResponse(url, method, request, requestType);
 			} else if (DefaultClientOptions.onApiResponse) {
 				DefaultClientOptions.onApiResponse(url, method, request, requestType);
@@ -54,7 +54,7 @@ class ClientBaseClass {
 			throw error;
 		});
 
-		if (options && (options.onApiResponse !== null)) {
+		if (options && (options.onApiResponse !== null) && (options.onApiResponse !== undefined)) {
 			if (options.onApiResponse) options.onApiResponse(url, method, request, requestType);
 		} else if (DefaultClientOptions.onApiResponse) {
 			DefaultClientOptions.onApiResponse(url, method, request, requestType);
