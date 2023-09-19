@@ -41,13 +41,13 @@ exports.codegen = async function (root) {
 		const configuration = configurationArray[index];
 
 		// Setup Files and Folders for Models
-		fs.mkdirSync(rootPath + '/' + configuration.modelsDestination, {recursive: true});
-		fs.mkdirSync(rootPath + '/' + configuration.modelsDestination + '/base', {recursive: true});
-		fs.mkdirSync(rootPath + '/' + configuration.modelsDestination + '/enum', {recursive: true});
+		fs.mkdirSync(rootPath + '/' + configuration.modelsDestination, { recursive: true });
+		fs.mkdirSync(rootPath + '/' + configuration.modelsDestination + '/base', { recursive: true });
+		fs.mkdirSync(rootPath + '/' + configuration.modelsDestination + '/enum', { recursive: true });
 
 		// Setup Files and Folders for Clients
-		fs.mkdirSync(rootPath + '/' + configuration.clientsDestination, {recursive: true});
-		fs.mkdirSync(rootPath + '/' + configuration.clientsDestination + '/base', {recursive: true});
+		fs.mkdirSync(rootPath + '/' + configuration.clientsDestination, { recursive: true });
+		fs.mkdirSync(rootPath + '/' + configuration.clientsDestination + '/base', { recursive: true });
 		fs.copyFileSync(__dirname + '/templates/ClientBaseClass._js', rootPath + '/' + configuration.clientsDestination + '/base/ClientBaseClass.js');
 		fs.copyFileSync(__dirname + '/templates/ClientOptions._js', rootPath + '/' + configuration.clientsDestination + '/base/ClientOptions.js');
 		copyFileIfNotExists(__dirname + '/templates/DefaultClientOptions._js', rootPath + '/' + configuration.clientsDestination + '/DefaultClientOptions.js');
@@ -59,7 +59,7 @@ exports.codegen = async function (root) {
 	}
 };
 
-var copyFileIfNotExists = function(source, destination) {
+var copyFileIfNotExists = function (source, destination) {
 	try {
 		fs.statSync(destination);
 	} catch (error) {
@@ -433,6 +433,15 @@ class CodegenHelper {
 		return propertyList;
 	}
 
+	generatePropertyDeclarationList = function (propertyArray) {
+		var declarationList = '';
+		propertyArray.forEach(property => {
+			declarationList += property.getModelPropertyDeclaration();
+		});
+
+		return declarationList;
+	}
+
 	generateModelDefinitionList = function (propertyArray) {
 		var modelDefinitionList = '';
 		propertyArray.forEach(property => {
@@ -440,6 +449,47 @@ class CodegenHelper {
 		});
 
 		return modelDefinitionList;
+	}
+
+	generateExtraImportList = function (propertyArray) {
+		var importList = '';
+		var modelMemo = [];
+
+		function getModelName(property) {
+			var modelName = property.definition.$ref.replace('#/definitions/', '');
+			return modelName;
+		}
+
+		propertyArray.forEach(property => {
+			// check whether the property has a model type
+			if (property.definition.$ref) {
+				var modelName = getModelName(property);
+				if (!modelMemo.includes(modelName)) {
+					importList += 'import ' + modelName + ' from "../' + modelName + '";\n';
+					modelMemo.push(modelName);
+				}
+			}
+
+			// check whether the property has a model array type
+			if (property.definition.type === 'array') {
+				if (!property.definition.items) {
+					throw new Error('Property ' + this.name + ': array has no items defined');
+				}
+				var arrayProperty = new Property(property.name, property.definition.items);
+				if (arrayProperty.definition.$ref) {
+					var modelName = getModelName(arrayProperty)
+					if (!modelMemo.includes(modelName)) {
+						importList += 'import ' + modelName + ' from "../' + modelName + '";\n';
+						modelMemo.push(modelName);
+					}
+				}
+			}
+
+		});
+
+		importList += '\n'
+
+		return importList
 	}
 
 	executeCreateModelEnum = function (name, propertyName, propertyDefinition) {
@@ -505,6 +555,7 @@ class CodegenHelper {
 			'import ModelBaseClass from "@quasidea/oas-client-react/lib/ModelBaseClass";\n' +
 			'import ' + name + ' from "../' + name + '";\n' +
 			'import ModelProxyClass from "./ModelProxyClass";\n' +
+			this.generateExtraImportList(propertyArray) +
 			'\n' +
 			'/**\n' +
 			' * @class ' + name + 'Base\n' +
@@ -512,6 +563,7 @@ class CodegenHelper {
 			this.generatePropertyList(propertyArray) +
 			' */\n' +
 			'class ' + name + 'Base extends ModelBaseClass {\n' +
+			this.generatePropertyDeclarationList(propertyArray) +
 			'\n' +
 			'\t/**\n' +
 			'\t * Instantiates a new instance of ' + name + ' based on the generic object being passed in (typically from a JSON object)\n' +
