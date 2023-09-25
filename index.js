@@ -45,6 +45,7 @@ exports.codegen = async function (root) {
 		fs.mkdirSync(rootPath + '/' + configuration.modelsDestination + '/base', { recursive: true });
 		fs.mkdirSync(rootPath + '/' + configuration.modelsDestination + '/enum', { recursive: true });
 
+
 		// Setup Files and Folders for Clients
 		fs.mkdirSync(rootPath + '/' + configuration.clientsDestination, { recursive: true });
 		fs.mkdirSync(rootPath + '/' + configuration.clientsDestination + '/base', { recursive: true });
@@ -140,6 +141,8 @@ class CodegenHelper {
 		}
 
 		this.executeCreateAggregateClientBase(clientObject);
+		this.executeCreateModelIndexFile(api);
+
 	}
 
 	executeCreateClientBase_Helper = function (method, definition, imports) {
@@ -602,4 +605,31 @@ class CodegenHelper {
 
 		fs.writeFileSync(this.rootPath + '/' + this.configuration.modelsDestination + '/base/' + name + 'Base.js', content);
 	}
+
+	executeCreateModelIndexFile = function (api) {
+		const names = []
+		for (var name in api.definitions) {
+			names.push(name);
+		}
+
+		let content = '';
+
+		// import files
+		names.forEach(name => {
+			content += `import ${name} from "./${name}.js";\n`;
+		})
+
+		content += '\n';
+		content += 'export {\n'
+
+		// export classes
+		names.forEach(name => {
+			content += `\t${name},\n` ;
+		})
+
+		content += '};'
+
+		fs.writeFileSync(`${this.rootPath}/${this.configuration.modelsDestination}/index.js`, content);
+	}
+
 }
