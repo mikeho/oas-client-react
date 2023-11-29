@@ -1,4 +1,4 @@
-#!/usr/bin/env node --trace-events-enabled
+#!/usr/bin/env node
 
 
 function showHelp() {

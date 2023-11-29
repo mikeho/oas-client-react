@@ -451,9 +451,9 @@ class CodegenHelper {
 		return modelDefinitionList;
 	}
 
-	generateExtraImportList = function (propertyArray) {
+	generateExtraImportList = function (propertyArray, modelToIgnore) {
 		var importList = '';
-		var modelMemo = [];
+		var modelMemo = [modelToIgnore];
 
 		function getModelName(property) {
 			var modelName = property.definition.$ref.replace('#/definitions/', '');
@@ -555,7 +555,7 @@ class CodegenHelper {
 			'import ModelBaseClass from "@quasidea/oas-client-react/lib/ModelBaseClass";\n' +
 			'import ' + name + ' from "../' + name + '";\n' +
 			'import ModelProxyClass from "./ModelProxyClass";\n' +
-			this.generateExtraImportList(propertyArray) +
+			this.generateExtraImportList(propertyArray, name) +
 			'\n' +
 			'/**\n' +
 			' * @class ' + name + 'Base\n' +
