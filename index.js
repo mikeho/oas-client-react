@@ -178,7 +178,7 @@ class CodegenHelper {
 							requestPayloadSetupQuery = '\n\t\tconst queryArray = [];\n';
 						}
 						requestPayloadSetupQuery += '\t\tif ((' + parameterName + ' !== undefined) && (' + parameterName + ' !== null) && (' + parameterName + '.length)) ' +
-							"queryArray.push('" + parameter.name + "=' + encodeURI(" + parameterName + "));\n";
+							"queryArray.push('" + parameter.name + "=' + encodeURIComponent(" + parameterName + "));\n";
 						property = new Property(parameterName, parameter);
 						break;
 					case 'formData':
@@ -197,7 +197,7 @@ class CodegenHelper {
 						break;
 					case 'path':
 						property = new Property(parameterName, parameter);
-						urlDefinition = urlDefinition.replace('{' + parameter.name + '}', "' +\n\t\t\t(" + parameterName + " ? encodeURI(" + parameterName + ") : '') + '");
+						urlDefinition = urlDefinition.replace('{' + parameter.name + '}', "' +\n\t\t\t(" + parameterName + " ? encodeURIComponent(" + parameterName + ") : '') + '");
 						break;
 					case 'body':
 						if (isFormData) {
