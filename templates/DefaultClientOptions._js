@@ -60,6 +60,20 @@ export default class DefaultClientOptions {
 	}
 
 	/**
+	 * This method is called whenever a response is being processed by the handler.
+	 * Feel free to modify, or you can remove this method altogether if an onApiProcessResponse handler is not needed.
+	 *
+	 * @method onApiProcessResponse
+	 * @param {string} url
+	 * @param {string} method
+	 * @param {Response} response
+	 */
+	// eslint-disable-next-line no-unused-vars
+	static onApiProcessResponse(url, method, response) {
+		console.log('[API Process Response] ' + method.toUpperCase() + ' ' + url);
+	}
+
+	/**
 	 * The default/initial set of response handlers for the response to any fetch() call.
 	 * This is designed to be altered.
 	 * @return {object}

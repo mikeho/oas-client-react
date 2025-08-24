@@ -303,6 +303,11 @@ class CodegenHelper {
 			'\t\t// noinspection Duplicates\n' +
 			"\t\tthis.executeApiCall(url, '" + definition.method + "'" + requestPayload + ', options)\n' +
 			'\t\t\t.then(response => {\n' +
+			'\t\t\t\tif (options) {\n' +
+			'\t\t\t\t\tif (options.onApiProcessResponse) options.onApiProcessResponse(url, '" + definition.method + "', response);\n' +
+			'\t\t\t\t} else if (DefaultClientOptions.onApiProcessResponse) {\n' +
+			'\t\t\t\t\tDefaultClientOptions.onApiProcessResponse(url, '" + definition.method + "', response);\n' +
+			'\t\t\t\t}\n\n' +
 			'\t\t\t\tswitch (response.status) {\n' +
 			casesArray.join('') +
 			'\t\t\t\t}\n' +
@@ -336,6 +341,7 @@ class CodegenHelper {
 
 		const content =
 			'import ClientBaseClass from "./ClientBaseClass";\n' +
+			'import DefaultClientOptions from "../DefaultClientOptions";\n' +
 			importLines +
 			'\n' +
 			'export default class ' + name + ' extends ClientBaseClass {\n' +
