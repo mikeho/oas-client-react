@@ -304,9 +304,9 @@ class CodegenHelper {
 			"\t\tthis.executeApiCall(url, '" + definition.method + "'" + requestPayload + ', options)\n' +
 			'\t\t\t.then(response => {\n' +
 			'\t\t\t\tif (options) {\n' +
-			'\t\t\t\t\tif (options.onApiProcessResponse) options.onApiProcessResponse(url, '" + definition.method + "', response);\n' +
+			"\t\t\t\t\tif (options.onApiProcessResponse) options.onApiProcessResponse(url, '" + definition.method + "', response);\n" +
 			'\t\t\t\t} else if (DefaultClientOptions.onApiProcessResponse) {\n' +
-			'\t\t\t\t\tDefaultClientOptions.onApiProcessResponse(url, '" + definition.method + "', response);\n' +
+			"\t\t\t\t\tDefaultClientOptions.onApiProcessResponse(url, '" + definition.method + "', response);\n" +
 			'\t\t\t\t}\n\n' +
 			'\t\t\t\tswitch (response.status) {\n' +
 			casesArray.join('') +
