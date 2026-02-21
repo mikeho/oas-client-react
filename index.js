@@ -559,6 +559,7 @@ class CodegenHelper {
 
 		const content =
 			'import ModelBaseClass from "@quasidea/oas-client-react/lib/ModelBaseClass";\n' +
+			'import DateOnly from "@quasidea/oas-client-react/lib/DateOnly";\n' +
 			'import ' + name + ' from "../' + name + '";\n' +
 			'import ModelProxyClass from "./ModelProxyClass";\n' +
 			this.generateExtraImportList(propertyArray, name) +
